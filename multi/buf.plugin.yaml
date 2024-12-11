@@ -1,0 +1,23 @@
+version: v1
+name: bufbuild.internal/custom-plugins/go
+plugin_version: v1.35.2
+output_languages:
+  - go
+registry:
+  # Add the runtime deps required by your plugins for the generated SDK.
+  go:
+    base_plugin: bufbuild.internal/custom-plugins/go
+    min_version: "1.21"
+    deps:
+      - module: google.golang.org/protobuf
+        version: v1.35.2
+      - module: github.com/planetscale/vtprotobuf
+        version: v0.6.0
+  # Add the options to invoke each plugin for the generated SDK.
+  opts:
+    - --go_out=.
+    - --go_opt=paths=source_relative
+    - --go-json_out=.
+    - --go-json_opt=paths=source_relative,emit_defaults=true
+    - --go-vtproto_out=.
+    - --go-vtproto_opt=paths=source_relative,features=marshal+unmarshal+size

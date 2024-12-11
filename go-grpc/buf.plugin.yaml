@@ -1,0 +1,20 @@
+version: v1
+name: bufbuild.internal/custom-plugins/go-grpc
+plugin_version: v1.5.1
+output_languages:
+  - go
+deps:
+  - plugin: bufbuild.internal/custom-plugins/go:v1.35.2
+registry:
+  go:
+    base_plugin: bufbuild.internal/custom-plugins/go
+    min_version: "1.21"
+    deps:
+      - module: google.golang.org/grpc
+        version: v1.64.1
+  opts:
+    - paths=source_relative
+    - require_unimplemented_servers=false
+    - separate_package=true
+spdx_license_id: Apache-2.0
+license_url: https://github.com/grpc/grpc-go/blob/v1.5.1/LICENSE
