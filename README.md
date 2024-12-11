@@ -2,23 +2,25 @@
 
 This repository contains an end-to-end example of how to:
 
-1. Build a multi-plugin Docker image.
-2. Upload to the Buf Schema Registry (BSR).
-3. Build a second plugin Docker image.
+1. Build a multi-plugin
+2. Upload to the Buf Schema Registry (BSR)
+3. Build a second plugin
 4. Upload the second plugin to the BSR and create a dependency on the first plugin for use with
    Generated SDKs.
 
 The goal is to end up with a custom Go "base plugin" that includes helper plugins to extend the
-functionality of the base plugin. And then create a second custom plugin, like go-grpc, that depends
-on the base plugin.
+functionality of the base plugin.
+
+And then create a second custom plugin, like go-grpc, that depends on the base plugin.
+
+<p align="center">
+  <img src="./image.png" width="50%">
+</p>
 
 Note, a multi-plugin bundles generators like `protoc-gen-go`, `protoc-gen-go-vtproto`, and
 `protoc-gen-go-json` that output generated code to the same package and are packaged using:
-https://github.com/bufbuild/tools/tree/7b00c24c/cmd/protoc-gen-multi
 
-<p align="left">
-  <img src="./image.png" width="45%">
-</p>
+https://github.com/bufbuild/tools/tree/7b00c24c/cmd/protoc-gen-multi
 
 ## Step 1 - Build the multi-plugin Docker image
 
@@ -56,7 +58,7 @@ Prepare a `buf.plugin.yaml`, see [buf.plugin.yaml](./multi/buf.plugin.yaml) for 
 
 Make sure you have the `buf` CLI installed and authenticated with the BSR.
 
-Either replace the remote address in the config file or use the `--override-remote=bsr.example.com`
+Either replace the remote address in the config file or use the `--override-remote=bufbuild.internal`
 flag.
 
 ```shell
@@ -95,6 +97,9 @@ synced by the system. We also don't want to modify this plugin because it has a 
 `protocolbuffers/go`.
 
 Prepare a `buf.plugin.yaml`, see [buf.plugin.yaml](./go-grpc/buf.plugin.yaml) for an example.
+
+Either replace the remote address in the config file or use the `--override-remote=bufbuild.internal`
+flag.
 
 ```shell
 buf beta registry plugin push \
