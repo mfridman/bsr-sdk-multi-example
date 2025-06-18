@@ -1,19 +1,19 @@
 version: v1
-name: bufbuild.internal/custom-plugins/go
-plugin_version: v1.35.2
+name: bufbuild.internal/go-plugins/go
+plugin_version: v1.36.6
 output_languages:
   - go
 registry:
-  # Add the runtime deps required by your plugins for the generated SDK.
   go:
-    base_plugin: bufbuild.internal/custom-plugins/go
-    min_version: "1.21"
+    base_plugin: bufbuild.internal/go-plugins/go
+    min_version: "1.23"
+    # Add the runtime deps required by your plugins for the generated SDK.
     deps:
       - module: google.golang.org/protobuf
-        version: v1.35.2
+        version: v1.36.6
       - module: github.com/planetscale/vtprotobuf
         version: v0.6.0
-  # Add the options to invoke each plugin for the generated SDK.
+  # Add plugin options for each plugin in this list.
   opts:
     - --go_out=.
     - --go_opt=paths=source_relative

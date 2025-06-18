@@ -1,119 +1,112 @@
 # bsr-sdk-multi-example
 
-This repository contains an end-to-end example of how to:
+This repository demonstrates building and uploading custom Buf plugins to the Buf Schema Registry (BSR):
 
-1. Build a multi-plugin
-2. Upload to the Buf Schema Registry (BSR)
-3. Build a second plugin
-4. Upload the second plugin to the BSR and create a dependency on the first plugin for use with
-   Generated SDKs.
+1. **Multi-plugin** - Go base plugin bundled with vtprotobuf and go-json plugins
+2. **gRPC plugin** - gRPC service generation with dependency on the base plugin
+3. **Gateway plugin** (optional) - gRPC-Gateway HTTP proxy generation
 
-The goal is to end up with a custom Go "base plugin" that includes helper plugins to extend the
-functionality of the base plugin.
-
-And then create a second custom plugin, like go-grpc, that depends on the base plugin.
+The plugins form a dependency chain resulting in separate Go modules when used with Generated SDKs.
 
 <p align="center">
   <img src="./image.png" width="50%">
 </p>
 
-Note, a multi-plugin bundles generators like `protoc-gen-go`, `protoc-gen-go-vtproto`, and
-`protoc-gen-go-json` that output generated code to the same package and are packaged using:
+Multi-plugins bundle multiple generators that output to the same package using:
 
 https://github.com/bufbuild/tools/tree/7b00c24c/cmd/protoc-gen-multi
 
-## Step 1 - Build the multi-plugin Docker image
+## Plugin Overview
 
-A multi-plugin Docker image contains multiple plugins that output generated code to the same
-package.
+The plugins are organized in `./go-plugins/`:
 
-- [`protoc-gen-go`](https://pkg.go.dev/google.golang.org/protobuf@v1.35.2/cmd/protoc-gen-go)
+- **Multi Plugin** (`go-plugins/multi/`) - Base Go plugin with vtprotobuf and go-json plugins
+- **gRPC Plugin** (`go-plugins/grpc/`) - gRPC service generation
+- **Gateway Plugin** (`go-plugins/gateway/`) - gRPC-Gateway HTTP proxy generation
+
+## Step 1 - Multi-plugin (Base Go Plugin)
+
+Build and upload the multi-plugin that bundles multiple generators:
+
+- [`protoc-gen-go`](https://pkg.go.dev/google.golang.org/protobuf@v1.36.6/cmd/protoc-gen-go)
 - [`protoc-gen-go-vtproto`](https://pkg.go.dev/github.com/planetscale/vtprotobuf/cmd/protoc-gen-go-vtproto)
 - [`protoc-gen-go-json`](https://pkg.go.dev/github.com/mfridman/protoc-gen-go-json)
 
-See [multi/Dockerfile](./multi/Dockerfile) for the Dockerfile.
+See [go-plugins/multi/Dockerfile](./go-plugins/multi/Dockerfile) and [go-plugins/multi/buf.plugin.yaml](./go-plugins/multi/buf.plugin.yaml).
 
 ```shell
+# Build the multi-plugin image
 docker buildx build \
+    -f go-plugins/multi/Dockerfile \
     --platform linux/amd64 \
-    -f multi/Dockerfile \
-    -t bufbuild.internal/custom-plugins/go:v1.35.2 \
-    ./multi
-```
+    -t bufbuild.internal/go-plugins/go:v1.36.6 \
+    ./go-plugins/multi
 
-Although there are multiple plugins in the image, the version is set to `v1.35.2` to match the
-version of `protoc-gen-go`. You can set the version to any value you like.
-
-## Step 2 - Upload the multi-plugin Docker image to BSR
-
-Pick an organization and plugin name.
-
-Avoid using `protocolbuffers` as an organization name as it is reserved for plugins that are
-automatically synced by the system.
-
-For the sake of this example, we'll use `custom-plugins` as the organization and `go` as the plugin
-name.
-
-Prepare a `buf.plugin.yaml`, see [buf.plugin.yaml](./multi/buf.plugin.yaml) for an example.
-
-Make sure you have the `buf` CLI installed and authenticated with the BSR.
-
-Either replace the remote address in the config file or use the `--override-remote=bufbuild.internal`
-flag.
-
-```shell
+# Upload to BSR
 buf beta registry plugin push \
     --visibility public \
-    --image bufbuild.internal/custom-plugins/go:v1.35.2 \
-    ./multi
+    --override-remote bufbuild.internal \
+    --image bufbuild.internal/go-plugins/go:v1.36.6 \
+    ./go-plugins/multi
 ```
 
-## Step 3 - Build the second plugin Docker image
+**Note:** The version is set to `v1.36.6` to match `protoc-gen-go`. Use `go-plugins` as the
+organization (avoid reserved names like `protocolbuffers`) and `go` as the plugin name.
 
-Prepare a Dockerfile that bundles the `protoc-gen-go-grpc` plugin, note there is a patch that is
-applied to the plugin to force generated code to **output to a different package**, which is not the
-default behavior. But it's what allows the BSR to create dependencies between the two plugins,
-resulting in separate Go modules.
+## Step 2 - gRPC Plugin
+
+Build and upload the gRPC plugin that depends on the base multi-plugin. It uses a patched `protoc-gen-go-grpc` to output to a **separate package**, enabling dependency relationships between plugins.
 
 - [`protoc-gen-go-grpc`](https://pkg.go.dev/google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1)
 
-See [go-grpc/Dockerfile](./go-grpc/Dockerfile) for the Dockerfile.
+See [go-plugins/grpc/Dockerfile](./go-plugins/grpc/Dockerfile) and [go-plugins/grpc/buf.plugin.yaml](./go-plugins/grpc/buf.plugin.yaml).
 
 ```shell
+# Build the gRPC plugin image
 docker buildx build \
     --platform linux/amd64 \
-    -f go-grpc/Dockerfile \
-    -t bufbuild.internal/custom-plugins/go-grpc:v1.5.1 \
-    ./go-grpc
-```
+    -f go-plugins/grpc/Dockerfile \
+    -t bufbuild.internal/go-plugins/grpc:v1.5.1 \
+    ./go-plugins/grpc
 
-## Step 4 - Upload the second plugin Docker image to BSR
-
-For simplicity, we'll use the same organization as the first plugin, `custom-plugins`, and the
-plugin name `go-grpc`.
-
-Avoid using `grpc` as an organization name as it is reserved for plugins that are automatically
-synced by the system. We also don't want to modify this plugin because it has a dependency on
-`protocolbuffers/go`.
-
-Prepare a `buf.plugin.yaml`, see [buf.plugin.yaml](./go-grpc/buf.plugin.yaml) for an example.
-
-Either replace the remote address in the config file or use the `--override-remote=bufbuild.internal`
-flag.
-
-```shell
+# Upload to BSR
 buf beta registry plugin push \
     --visibility public \
-    --image bufbuild.internal/custom-plugins/go-grpc:v1.5.1 \
-    ./go-grpc
+    --override-remote bufbuild.internal \
+    --image bufbuild.internal/go-plugins/grpc:v1.5.1 \
+    ./go-plugins/grpc
 ```
 
-## Notes
+## Step 3 - gRPC Gateway Plugin (Optional)
 
-### Installing the `buf` CLI from source
+Build and upload the gRPC Gateway plugin that generates HTTP/JSON proxy code. It depends on both the base multi-plugin and the gRPC plugin.
 
-We're using `main` to include unreleased features.
+- [`protoc-gen-grpc-gateway`](https://pkg.go.dev/github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.27.0)
+
+See [go-plugins/gateway/Dockerfile](./go-plugins/gateway/Dockerfile) and [go-plugins/gateway/buf.plugin.yaml](./go-plugins/gateway/buf.plugin.yaml).
 
 ```shell
-go install github.com/bufbuild/buf/cmd/buf@main
+# Build the gateway plugin image
+docker buildx build \
+    --platform linux/amd64 \
+    -f go-plugins/gateway/Dockerfile \
+    -t bufbuild.internal/go-plugins/gateway:v2.27.0 \
+    ./go-plugins/gateway
+
+# Upload to BSR
+buf beta registry plugin push \
+    --visibility public \
+    --override-remote bufbuild.internal \
+    --image bufbuild.internal/go-plugins/gateway:v2.27.0 \
+    ./go-plugins/gateway
 ```
+
+## Plugin Dependencies
+
+The plugins form a dependency chain:
+
+1. **Multi Plugin** (`go`) - Base plugin (no dependencies)
+2. **gRPC Plugin** (`grpc`) - Depends on `go-plugins/go:v1.36.6`
+3. **Gateway Plugin** (`gateway`) - Depends on both `go-plugins/go:v1.36.6` and `go-plugins/grpc:v1.5.1`
+
+This structure allows the BSR to generate separate Go modules for each plugin while maintaining proper import relationships.

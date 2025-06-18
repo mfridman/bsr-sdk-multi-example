@@ -1,12 +1,8 @@
 # For details on buf.yaml configuration, visit https://buf.build/docs/configuration/v2/buf-yaml
 version: v2
-deps:
-  - bufdemo.buf.dev/googleapis/googleapis
 modules:
-  - name: bufdemo.buf.dev/acme/petapis
-    path: petapis
-  - name: bufdemo.buf.dev/acme/paymentapis
-    path: paymentapis
+  - name: bufbuild.internal/acme/debug-gateway
+    path: proto
 lint:
   use:
     - STANDARD

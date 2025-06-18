@@ -1,5 +1,5 @@
-# syntax=docker/dockerfile:1.10
-FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS build
+# syntax=docker/dockerfile:1.15
+FROM --platform=$BUILDPLATFORM golang:1.24.4-bookworm AS build
 
 ARG TARGETOS TARGETARCH
 ENV CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH
@@ -8,9 +8,9 @@ ENV CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH
 RUN go install -ldflags "-s -w" github.com/bufbuild/tools/cmd/protoc-gen-multi@latest
 
 # Add custom plugins here
-RUN go install -ldflags "-s -w" google.golang.org/protobuf/cmd/protoc-gen-go@v1.35.2 \
+RUN go install -ldflags "-s -w" google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.6 \
     && go install -ldflags "-s -w" github.com/planetscale/vtprotobuf/cmd/protoc-gen-go-vtproto@v0.6.0 \
-    && go install -ldflags "-s -w" github.com/mfridman/protoc-gen-go-json@v1.4.1
+    && go install -ldflags "-s -w" github.com/mfridman/protoc-gen-go-json@v1.5.0
 
 # Move binaries prefixed with GOOS_GOARCH to /go/bin.
 RUN mv /go/bin/${TARGETOS}_${TARGETARCH}/* /go/bin || true

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package service1.v1;
+
+import "google/api/annotations.proto";
+
+service Service {
+  rpc GetService(GetServiceRequest) returns (GetServiceResponse) {
+    option (google.api.http) = {get: "/v1/service/{id}"};
+  }
+}
+
+message GetServiceRequest {
+  string id = 1;
+}
+
+message GetServiceResponse {
+  string id = 1;
+  string name = 2;
+}

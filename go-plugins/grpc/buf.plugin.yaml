@@ -1,17 +1,17 @@
 version: v1
-name: bufbuild.internal/custom-plugins/go-grpc
+name: bufbuild.internal/go-plugins/grpc
 plugin_version: v1.5.1
 output_languages:
   - go
 deps:
-  - plugin: bufbuild.internal/custom-plugins/go:v1.35.2
+  - plugin: bufbuild.internal/go-plugins/go:v1.36.6
 registry:
   go:
-    base_plugin: bufbuild.internal/custom-plugins/go
-    min_version: "1.21"
+    base_plugin: bufbuild.internal/go-plugins/go
+    min_version: "1.23"
     deps:
       - module: google.golang.org/grpc
-        version: v1.64.1
+        version: v1.73.0
   opts:
     - paths=source_relative
     - require_unimplemented_servers=false
